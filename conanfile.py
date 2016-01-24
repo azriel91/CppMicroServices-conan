@@ -1,4 +1,5 @@
 from conans import ConanFile
+import os
 
 
 class CppMicroServicesConan(ConanFile):
@@ -30,6 +31,8 @@ class CppMicroServicesConan(ConanFile):
         self.run("git clone {url} --branch {branch} --depth 1".format(url=cppmicroservices_url, branch=beta_branch))
 
     def build(self):
+        if not os.path.isdir(self.name):
+            self.source()
         option_defines = ' '.join("-D%s=%s" % (option, val) for (option, val) in self.options.iteritems())
         self.run("cmake {src_dir} -B{build_dir} {defines}".format(src_dir=self.name,
                                                                   build_dir=self.build_dir,
@@ -61,7 +64,8 @@ class CppMicroServicesConan(ConanFile):
         build_lib_dir = "{build_dir}/lib".format(build_dir=self.build_dir)
         self.copy('*.so*', dst='lib', src=build_lib_dir)  # In unix systems, the version number is appended
         self.copy('*.a', dst='lib', src=build_lib_dir)
-        self.copy('*.lib', dst='lib', src=build_lib_dir)
+        # msvc places '.lib' files under the build type (Debug/Release) subdirectory
+        self.copy('*.lib', dst='lib', src=build_lib_dir, keep_path=False)
 
         # usWebConsole is built in the bin/main directory, need to check why
         # In unix systems, the version number is appended to the shared library
