@@ -1,5 +1,5 @@
-from conans import *
-import subprocess
+from conans import ConanFile
+
 
 class CppMicroServicesConan(ConanFile):
     name = 'CppMicroServices'
@@ -8,12 +8,12 @@ class CppMicroServicesConan(ConanFile):
     generators = ['cmake']
     url = 'https://github.com/azriel91/CppMicroServices-conan.git'
     options = {
-        'US_ENABLE_AUTOLOADING_SUPPORT': ['ON', 'OFF'], # Enable bundle auto-loading support
-        'US_ENABLE_THREADING_SUPPORT':   ['ON', 'OFF'], # Enable threading support
-        'US_ENABLE_DEBUG_OUTPUT':        ['ON', 'OFF'], # Enable debug messages
-        'US_BUILD_SHARED_LIBS':          ['ON', 'OFF'], # Build shared libraries
-        'US_BUILD_TESTING':              ['ON', 'OFF'], # Build tests
-        'US_BUILD_EXAMPLES':             ['ON', 'OFF'], # Build example projects
+        'US_ENABLE_AUTOLOADING_SUPPORT': ['ON', 'OFF'],  # Enable bundle auto-loading support
+        'US_ENABLE_THREADING_SUPPORT': ['ON', 'OFF'],    # Enable threading support
+        'US_ENABLE_DEBUG_OUTPUT': ['ON', 'OFF'],         # Enable debug messages
+        'US_BUILD_SHARED_LIBS': ['ON', 'OFF'],           # Build shared libraries
+        'US_BUILD_TESTING': ['ON', 'OFF'],               # Build tests
+        'US_BUILD_EXAMPLES': ['ON', 'OFF'],              # Build example projects
     }
     default_options = ('US_ENABLE_AUTOLOADING_SUPPORT=OFF',
                        'US_ENABLE_THREADING_SUPPORT=OFF',
@@ -21,7 +21,7 @@ class CppMicroServicesConan(ConanFile):
                        'US_BUILD_SHARED_LIBS=ON',
                        'US_BUILD_TESTING=OFF',
                        'US_BUILD_EXAMPLES=OFF')
-    cppmicroservices_bundles = ['core','httpservice', 'shellservice', 'webconsole']
+    cppmicroservices_bundles = ['core', 'httpservice', 'shellservice', 'webconsole']
     build_dir = 'build'
 
     def source(self):
@@ -59,7 +59,7 @@ class CppMicroServicesConan(ConanFile):
 
         # Built artifacts
         build_lib_dir = "{build_dir}/lib".format(build_dir=self.build_dir)
-        self.copy('*.so*', dst='lib', src=build_lib_dir) # In unix systems, the version number is appended
+        self.copy('*.so*', dst='lib', src=build_lib_dir)  # In unix systems, the version number is appended
         self.copy('*.a', dst='lib', src=build_lib_dir)
         self.copy('*.lib', dst='lib', src=build_lib_dir)
 
