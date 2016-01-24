@@ -1,5 +1,6 @@
 from conans import ConanFile
 import os
+import cStringIO
 
 
 class CppMicroServicesConan(ConanFile):
@@ -24,6 +25,7 @@ class CppMicroServicesConan(ConanFile):
                        'US_BUILD_EXAMPLES=OFF')
     cppmicroservices_bundles = ['core', 'httpservice', 'shellservice', 'webconsole']
     build_dir = 'build'
+    linked_libraries_filename = 'cppmicroservices_linked_libraries.txt'
 
     def source(self):
         cppmicroservices_url = 'https://github.com/CppMicroServices/CppMicroServices.git'
@@ -38,6 +40,13 @@ class CppMicroServicesConan(ConanFile):
                                                                   build_dir=self.build_dir,
                                                                   defines=option_defines))
         self.run("cmake --build {build_dir}".format(build_dir=self.build_dir))
+
+        linked_libraries_file_path = "{conan_dir}/{build_dir}/{filename}".format(conan_dir=self.conanfile_directory,
+                                                                                 build_dir=self.build_dir,
+                                                                                 filename=self.linked_libraries_filename)
+        with open(linked_libraries_file_path, 'w') as linked_libraries_file:
+            linked_libraries_file.write('\n'.join(self._get_linker_libraries()))
+            linked_libraries_file.close()
 
     def package(self):
         # Module headers
@@ -81,9 +90,17 @@ class CppMicroServicesConan(ConanFile):
         # We need to copy '*' because there are also template code files in the cmake directory
         self.copy('*', dst='cmake', src="{src_dir}/cmake".format(src_dir=self.name))
 
+        # Linked libraries file
+        self.copy(self.linked_libraries_filename, dst='.', src=self.build_dir)
+
     def package_info(self):
         """ Maybe we shouldn't link to every bundle that is built, and just link to the CppMicroServices one """
-        self.cpp_info.libs = [self.name, 'usHttpService', 'usShellService', 'usWebConsole']
+        # linked_libraries_file_path = "%s/%s" % (self.cpp_info.rootpath, self.linked_libraries_filename)
+        # with open(linked_libraries_file_path, 'r') as linked_libraries_file:
+        #     # Warning: This reads the whole file into memory, but we expect it to be small
+        #     self.cpp_info.libs = linked_libraries_file.read().split()
+        self.cpp_info.libs = ["CppMicroServices"]
+
         self.cpp_info.includedirs += ["{bundle}/include".format(bundle=bundle)
                                       for bundle in self.cppmicroservices_bundles]
 
@@ -95,3 +112,20 @@ class CppMicroServicesConan(ConanFile):
         # Improvement: recursively include any directories underneath {bundle}/include
         self.cpp_info.includedirs += ["core/include/{core_private}".format(core_private=sub_dir)
                                       for sub_dir in ['bundle', 'service', 'util']]
+
+    def _get_linker_libraries(self):
+        # Extract dependencies for the CppMicroServices library, to be appended to self.cpp_info.libs
+        # See http://stackoverflow.com/a/31940106/1576773
+        self.run("cmake --graphviz={build_dir}/cppmicroservices.dot {build_dir}".format(build_dir=self.build_dir), False)
+
+        dependencies = None
+        try:
+            output_deps = cStringIO.StringIO()
+            command = "sed -n 's/.*label=\"\\(.*\\)\"\\s.*/\\1/p' {build_dir}/cppmicroservices.dot.{lib}".format(build_dir=self.build_dir,
+                                                                                                                 lib=self.name)
+            self.run(command, output_deps)
+            dependencies = output_deps.getvalue().split()
+        finally:
+            output_deps.close()
+            self.run("rm -f {build_dir}/cppmicroservices.dot*".format(build_dir=self.build_dir))
+        return dependencies
