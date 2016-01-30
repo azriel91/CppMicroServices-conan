@@ -99,7 +99,9 @@ class CppMicroServicesConan(ConanFile):
         # with open(linked_libraries_file_path, 'r') as linked_libraries_file:
         #     # Warning: This reads the whole file into memory, but we expect it to be small
         #     self.cpp_info.libs = linked_libraries_file.read().split()
-        self.cpp_info.libs = ["CppMicroServices"]
+        self.cpp_info.libs = ['CppMicroServices']
+        if self.settings.os == 'Linux':
+            self.cpp_info.libs += ['dl']
 
         self.cpp_info.includedirs += ["{bundle}/include".format(bundle=bundle)
                                       for bundle in self.cppmicroservices_bundles]
